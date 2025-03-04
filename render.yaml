@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: service-request-backend
+    env: node
+    plan: free  # Cambia a 'starter' o superior si necesitas más recursos
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGO_URI
+        value: mongodb+srv://beriguetemisael:beriguetemisael@arkit-cluster.6tjdl.mongodb.net/?retryWrites=true&w=majority&appName=arkit-cluster
+      - key: PORT
+        value: 3000
