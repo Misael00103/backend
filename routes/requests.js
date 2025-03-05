@@ -24,7 +24,6 @@ router.post('/', [
   }
 });
 
-
 // Get all requests (para DashboardSolicitudes)
 router.get('/', async (req, res) => {
   try {
@@ -44,7 +43,7 @@ router.get('/', async (req, res) => {
     console.log('Fetching all requests with query:', query);
     const requests = await Request.find(query)
       .sort({ date: -1 })
-      .select('name email phone service description status date'); // Añadimos 'phone'
+      .select('name email phone service description status date');
     console.log('Requests fetched:', requests);
     res.json(requests);
   } catch (error) {
@@ -142,7 +141,7 @@ router.get('/recent', async (req, res) => {
     const recent = await Request.find()
       .sort({ date: -1 })
       .limit(10)
-      .select('name service phone description date status'); // Añadimos 'phone'
+      .select('name service phone description date status');
     console.log('Recent requests sent:', recent);
     res.json(recent);
   } catch (error) {
@@ -150,6 +149,5 @@ router.get('/recent', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 module.exports = router;
