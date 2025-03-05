@@ -27,7 +27,6 @@ router.post('/', [
 
 // Get all requests (para DashboardSolicitudes)
 router.get('/', async (req, res) => {
-  res.send('/requests');
   try {
     const { status, service, search } = req.query;
     let query = {};
