@@ -7,9 +7,9 @@ const requestRoutes = require('./routes/requests');
 const authMiddleware = require('./middleware/auth');
 const { body, validationResult } = require('express-validator');
 const Request = require('./models/Request');
+const auth = require('./middleware/auth');
 
 const app = express();
-
 app.use(express.json());
 app.use(cors({ origin: ['*'] }));
 
