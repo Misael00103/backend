@@ -11,7 +11,7 @@ const Request = require('./models/Request');
 const app = express();
 
 app.use(express.json());
-app.use(cors({ origin: ['http://arkit.site', 'http://localhost:8080', '*'] }));
+app.use(cors({ origin: ['*'] }));
 
 mongoose.set('strictQuery', true);
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
