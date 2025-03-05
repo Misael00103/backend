@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const requestRoutes = require('./routes/requests');
+const clientRoutes = require('./routes/clients'); // Asegúrate de que esta línea esté presente
 const authMiddleware = require('./middleware/auth');
 const { body, validationResult } = require('express-validator');
 const Request = require('./models/Request');
@@ -11,7 +12,7 @@ const Request = require('./models/Request');
 const app = express();
 
 app.use(express.json());
-app.use(cors({ origin: '*' })); // Permitir solicitudes desde cualquier origen
+app.use(cors({ origin: '*' }));
 
 mongoose.set('strictQuery', true);
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -20,8 +21,6 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 
 // Rutas públicas
 app.use('/api/auth', authRoutes);
-
-// Ruta POST pública para /api/requests
 app.post('/api/requests', [
   body('name').notEmpty().withMessage('El nombre es requerido'),
   body('email').isEmail().withMessage('Correo electrónico inválido'),
@@ -29,12 +28,10 @@ app.post('/api/requests', [
   body('description').notEmpty().withMessage('La descripción es requerida'),
 ], async (req, res) => {
   console.log('Solicitud POST pública a /api/requests recibida:', req.body);
-
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
-
   try {
     const request = new Request(req.body);
     await request.save();
@@ -45,8 +42,9 @@ app.post('/api/requests', [
   }
 });
 
-// Rutas protegidas (GET, PUT, DELETE, etc.)
+// Rutas protegidas
 app.use('/api/requests', authMiddleware, requestRoutes);
+app.use('/api/clients', authMiddleware, clientRoutes); // Asegúrate de que esta línea esté presente
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));

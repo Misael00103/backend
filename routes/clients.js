@@ -7,6 +7,7 @@ const Client = require('../models/Client');
 router.get('/', async (req, res) => {
   try {
     const clients = await Client.find();
+    console.log('Clients fetched:', clients);
     res.json(clients);
   } catch (error) {
     console.error('Error fetching clients:', error);
@@ -32,6 +33,7 @@ router.post('/', [
       status: 'Activo', // Estado por defecto
     });
     await client.save();
+    console.log('Client added:', client);
     res.status(201).json(client);
   } catch (error) {
     console.error('Error adding client:', error);
@@ -50,6 +52,7 @@ router.put('/:id', async (req, res) => {
     if (!client) {
       return res.status(404).json({ message: 'Client not found' });
     }
+    console.log('Client updated:', client);
     res.json(client);
   } catch (error) {
     console.error('Error updating client:', error);
