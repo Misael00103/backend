@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: 'http://arkit.site' }));
+app.use(cors({ origin: '*' }));
 
 mongoose.set('strictQuery', true); // Suprime la advertencia
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
