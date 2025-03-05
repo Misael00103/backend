@@ -3,48 +3,27 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Request = require('../models/Request');
 
-// Create a new request
-router.post(
-  '/',
-  [
-    body('name').trim().notEmpty().withMessage('Name is required'),
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('phone').trim().notEmpty().withMessage('Phone is required'),
-    body('serviceType').notEmpty().withMessage('Service type is required'),
-    body('service').notEmpty().withMessage('Service is required'),
-    body('description').trim().notEmpty().withMessage('Description is required'),
-    body('foundUs').notEmpty().withMessage('Source is required'),
-    body('contactMethod').isIn(['whatsapp', 'call']).withMessage('Invalid contact method'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      console.log('Validation errors:', errors.array());
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    try {
-      console.log('Creating new request with data:', req.body);
-      const requestData = {
-        ...req.body,
-        status: 'Nuevo'
-      };
-      
-      const request = new Request(requestData);
-      await request.save();
-      
-      console.log('Request created:', request);
-      res.status(201).json({
-        success: true,
-        message: 'Request created successfully',
-        data: request
-      });
-    } catch (error) {
-      console.error('Error creating request:', error.message, error.stack);
-      res.status(500).json({ success: false, message: error.message || 'Server error' });
-    }
+router.post('/', [
+  body('name').notEmpty().withMessage('El nombre es requerido'),
+  body('email').isEmail().withMessage('Correo electrónico inválido'),
+  body('phone').notEmpty().withMessage('El teléfono es requerido'),
+  body('description').notEmpty().withMessage('La descripción es requerida'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-);
+
+  try {
+    const request = new Request(req.body);
+    await request.save();
+    res.status(201).json({ message: 'Solicitud creada exitosamente', request });
+  } catch (error) {
+    console.error('Error al crear solicitud:', error);
+    res.status(500).json({ message: 'Error al crear la solicitud' });
+  }
+});
+
 
 // Get all requests (para DashboardSolicitudes)
 router.get('/', async (req, res) => {
