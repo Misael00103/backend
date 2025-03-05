@@ -102,16 +102,13 @@ router.get('/stats', async (req, res) => {
   try {
     console.log('Fetching stats endpoint started...');
     const totalRequests = await Request.countDocuments();
-    const statusBreakdown = await Request.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } }
-    ]);
     const serviceBreakdown = await Request.aggregate([
       { $group: { _id: '$service', count: { $sum: 1 } } }
     ]);
     const sourceBreakdown = await Request.aggregate([
       { $group: { _id: '$foundUs', count: { $sum: 1 } } }
     ]);
-    const activeClients = 0; // Mockeado hasta integrar Client
+    const activeClients = await Request.distinct('email').then(emails => emails.length); // Aproximación de clientes activos
     const responseTime = await Request.aggregate([
       { $match: { status: 'Contactado' } },
       { $project: { duration: { $subtract: ['$updatedAt', '$createdAt'] } } },
@@ -120,7 +117,6 @@ router.get('/stats', async (req, res) => {
 
     const responseData = {
       totalRequests,
-      statusBreakdown,
       serviceBreakdown,
       sourceBreakdown,
       activeClients,
@@ -133,6 +129,7 @@ router.get('/stats', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 // Get recent requests (para Dashboard)
 router.get('/recent', async (req, res) => {
