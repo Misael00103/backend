@@ -1,43 +1,57 @@
-// routes/employees.js
 const express = require('express');
 const router = express.Router();
 const Employee = require('../models/Employee');
 const Department = require('../models/Department');
-const auth = require('../middleware/auth');
+const { body, validationResult } = require('express-validator');
 
 // Obtener todos los empleados
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const employees = await Employee.find().sort({ name: 1 });
     res.json(employees);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al obtener empleados:', error);
+    res.status(500).json({ message: 'Error al obtener empleados' });
   }
 });
 
 // Crear nuevo empleado
-router.post('/', auth, async (req, res) => {
-  const employee = new Employee({
-    name: req.body.name,
-    email: req.body.email,
-    phone: req.body.phone,
-    position: req.body.position,
-    department: req.body.department,
-    hireDate: req.body.hireDate,
-    salary: req.body.salary,
-    status: req.body.status || 'Activo'
-  });
+router.post('/', [
+  body('name').notEmpty().withMessage('El nombre es requerido'),
+  body('email').isEmail().withMessage('Email inválido'),
+  body('phone').notEmpty().withMessage('El teléfono es requerido'),
+  body('position').notEmpty().withMessage('El cargo es requerido'),
+  body('department').notEmpty().withMessage('El departamento es requerido'),
+  body('hireDate').isISO8601().withMessage('Fecha de contratación inválida'),
+  body('salary').isNumeric().withMessage('El salario debe ser un número'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
+    const employee = new Employee({
+      name: req.body.name,
+      email: req.body.email,
+      phone: req.body.phone,
+      position: req.body.position,
+      department: req.body.department,
+      hireDate: req.body.hireDate,
+      salary: req.body.salary,
+      status: req.body.status || 'Activo'
+    });
+
     const newEmployee = await employee.save();
     res.status(201).json(newEmployee);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error al crear empleado:', error);
+    res.status(400).json({ message: 'Error al crear empleado' });
   }
 });
 
 // Actualizar empleado
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
@@ -54,29 +68,43 @@ router.put('/:id', auth, async (req, res) => {
     const updatedEmployee = await employee.save();
     res.json(updatedEmployee);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error al actualizar empleado:', error);
+    res.status(400).json({ message: 'Error al actualizar empleado' });
   }
 });
 
 // Eliminar empleado
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id);
     if (!employee) return res.status(404).json({ message: 'Empleado no encontrado' });
     
-    await employee.remove();
+    await Employee.deleteOne({ _id: req.params.id });
     res.json({ message: 'Empleado eliminado' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al eliminar empleado:', error);
+    res.status(500).json({ message: 'Error al eliminar empleado' });
   }
 });
 
 // Obtener departamentos
-router.get('/departments', auth, async (req, res) => {
+router.get('/departments', async (req, res) => {
   try {
-    const departments = await Department.find().sort({ name: 1 });
+    // Primero intentamos obtener los departamentos de la base de datos
+    let departments = await Department.find().sort({ name: 1 });
     
-    // Calcular empleados por departamento
+    // Si no hay departamentos en la base de datos, usamos los predeterminados
+    if (departments.length === 0) {
+      departments = [
+        { name: "Desarrollo", budget: 720000 },
+        { name: "Diseño", budget: 336000 },
+        { name: "Administración", budget: 300000 },
+        { name: "Calidad", budget: 240000 },
+        { name: "Ventas", budget: 350000 },
+      ];
+    }
+    
+    // Calculamos empleados por departamento
     const departmentsWithStats = await Promise.all(departments.map(async (dept) => {
       const employeeCount = await Employee.countDocuments({ 
         department: dept.name,
@@ -92,12 +120,13 @@ router.get('/departments', auth, async (req, res) => {
     
     res.json(departmentsWithStats);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al obtener departamentos:', error);
+    res.status(500).json({ message: 'Error al obtener departamentos' });
   }
 });
 
 // Obtener estadísticas de empleados
-router.get('/stats', auth, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const totalEmployees = await Employee.countDocuments();
     const activeEmployees = await Employee.countDocuments({ status: 'Activo' });
@@ -126,7 +155,8 @@ router.get('/stats', auth, async (req, res) => {
       departmentStats
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al obtener estadísticas de empleados:', error);
+    res.status(500).json({ message: 'Error al obtener estadísticas de empleados' });
   }
 });
 

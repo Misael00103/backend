@@ -1,41 +1,53 @@
-// routes/finance.js
 const express = require('express');
 const router = express.Router();
 const Invoice = require('../models/Invoice');
-const auth = require('../middleware/auth');
+const { body, validationResult } = require('express-validator');
 
 // Obtener todas las facturas
-router.get('/invoices', auth, async (req, res) => {
+router.get('/invoices', async (req, res) => {
   try {
     const invoices = await Invoice.find().sort({ date: -1 });
     res.json(invoices);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al obtener facturas:', error);
+    res.status(500).json({ message: 'Error al obtener facturas' });
   }
 });
 
 // Crear nueva factura
-router.post('/invoices', auth, async (req, res) => {
-  const invoice = new Invoice({
-    client: req.body.client,
-    amount: req.body.amount,
-    date: req.body.date,
-    dueDate: req.body.dueDate,
-    status: req.body.status,
-    service: req.body.service,
-    clientId: req.body.clientId
-  });
+router.post('/invoices', [
+  body('client').notEmpty().withMessage('El cliente es requerido'),
+  body('amount').isNumeric().withMessage('El monto debe ser un número'),
+  body('date').isISO8601().withMessage('Fecha inválida'),
+  body('dueDate').isISO8601().withMessage('Fecha de vencimiento inválida'),
+  body('service').notEmpty().withMessage('El servicio es requerido'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
+    const invoice = new Invoice({
+      client: req.body.client,
+      amount: req.body.amount,
+      date: req.body.date,
+      dueDate: req.body.dueDate,
+      status: req.body.status || 'Pendiente',
+      service: req.body.service,
+      clientId: req.body.clientId
+    });
+
     const newInvoice = await invoice.save();
     res.status(201).json(newInvoice);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error al crear factura:', error);
+    res.status(400).json({ message: 'Error al crear factura' });
   }
 });
 
 // Actualizar factura
-router.put('/invoices/:id', auth, async (req, res) => {
+router.put('/invoices/:id', async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) return res.status(404).json({ message: 'Factura no encontrada' });
@@ -50,25 +62,27 @@ router.put('/invoices/:id', auth, async (req, res) => {
     const updatedInvoice = await invoice.save();
     res.json(updatedInvoice);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    console.error('Error al actualizar factura:', error);
+    res.status(400).json({ message: 'Error al actualizar factura' });
   }
 });
 
 // Eliminar factura
-router.delete('/invoices/:id', auth, async (req, res) => {
+router.delete('/invoices/:id', async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) return res.status(404).json({ message: 'Factura no encontrada' });
     
-    await invoice.remove();
+    await Invoice.deleteOne({ _id: req.params.id });
     res.json({ message: 'Factura eliminada' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al eliminar factura:', error);
+    res.status(500).json({ message: 'Error al eliminar factura' });
   }
 });
 
 // Obtener estadísticas financieras
-router.get('/stats', auth, async (req, res) => {
+router.get('/stats', async (req, res) => {
   try {
     const totalRevenue = await Invoice.aggregate([
       { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -118,7 +132,8 @@ router.get('/stats', auth, async (req, res) => {
       monthlyRevenue
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error al obtener estadísticas financieras:', error);
+    res.status(500).json({ message: 'Error al obtener estadísticas financieras' });
   }
 });
 

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const requestRoutes = require('./routes/requests');
-const clientRoutes = require('./routes/clients'); // Asegúrate de que esta línea esté presente
+const clientRoutes = require('./routes/clients');
 const authMiddleware = require('./middleware/auth');
 const { body, validationResult } = require('express-validator');
 const Request = require('./models/Request');
@@ -44,11 +44,22 @@ app.post('/api/requests', [
 
 // Rutas protegidas
 app.use('/api/requests', authMiddleware, requestRoutes);
-app.use('/api/clients', authMiddleware, clientRoutes); // Asegúrate de que esta línea esté presente
-app.use('/api/users', require('./routes/users'));
+app.use('/api/clients', authMiddleware, clientRoutes);
 
-// Nuevas rutas
-app.use('/api/finance', require('./routes/finance'));
-app.use('/api/employees', require('./routes/employees'));
+// Verifica si los archivos de rutas existen antes de importarlos
+try {
+  const financeRoutes = require('./routes/finance');
+  app.use('/api/finance', authMiddleware, financeRoutes);
+} catch (error) {
+  console.log('Rutas de finanzas no disponibles:', error.message);
+}
+
+try {
+  const employeesRoutes = require('./routes/employees');
+  app.use('/api/employees', authMiddleware, employeesRoutes);
+} catch (error) {
+  console.log('Rutas de empleados no disponibles:', error.message);
+}
+
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
