@@ -45,6 +45,10 @@ app.post('/api/requests', [
 // Rutas protegidas
 app.use('/api/requests', authMiddleware, requestRoutes);
 app.use('/api/clients', authMiddleware, clientRoutes); // Asegúrate de que esta línea esté presente
+app.use('/api/users', require('./routes/users'));
 
+// Nuevas rutas
+app.use('/api/finance', require('./routes/finance'));
+app.use('/api/employees', require('./routes/employees'));
 const port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Server running on port ${port}`));
